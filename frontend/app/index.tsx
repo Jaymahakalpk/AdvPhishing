@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../src/store/authStore';
 import { sendOTP, verifyOTP, updateUser } from '../src/utils/api';
 import { translations, Language } from '../src/constants/translations';
@@ -65,12 +66,22 @@ export default function LoginScreen() {
     try {
       const response = await verifyOTP(phone, otp);
       const userData = response.data.user;
+      
+      // Clear any cached data first
+      await AsyncStorage.clear();
+      
+      // Set fresh user data
       await setUser(userData);
       
       if (!userData.name) {
         setStep('profile');
       } else {
-        router.replace('/(tabs)');
+        // Route based on role immediately
+        if (userData.role === 'delivery_partner') {
+          router.replace('/(partner-tabs)');
+        } else {
+          router.replace('/(tabs)');
+        }
       }
     } catch (error) {
       console.error('Verify OTP error:', error);
