@@ -65,11 +65,21 @@ export const useCartStore = create<CartStore>((set, get) => ({
   loadCart: async () => {
     try {
       const cartData = await AsyncStorage.getItem('cart');
-      if (cartData) {
-        set({ items: JSON.parse(cartData) });
+      if (cartData && cartData !== 'undefined' && cartData !== 'null') {
+        const parsed = JSON.parse(cartData);
+        if (Array.isArray(parsed)) {
+          set({ items: parsed });
+        }
       }
     } catch (error) {
       console.error('Error loading cart:', error);
+      // Clear corrupted cart data
+      try {
+        await AsyncStorage.removeItem('cart');
+      } catch (e) {
+        console.error('Error clearing cart:', e);
+      }
+      set({ items: [] });
     }
   },
 }));
