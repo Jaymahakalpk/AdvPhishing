@@ -337,7 +337,11 @@ async def update_order_status(order_id: str, status_update: Dict[str, str]):
 @api_router.post("/delivery-partners")
 async def create_delivery_partner(partner: DeliveryPartner):
     """Register a delivery partner"""
-    result = await db.delivery_partners.insert_one(partner.dict())
+    # Auto-verify for MVP
+    partner_dict = partner.dict()
+    partner_dict["is_verified"] = True  # Auto-approve for MVP
+    
+    result = await db.delivery_partners.insert_one(partner_dict)
     partner_doc = await db.delivery_partners.find_one({"_id": result.inserted_id})
     return {"success": True, "partner": serialize_doc(partner_doc)}
 
@@ -359,20 +363,156 @@ async def update_delivery_partner(user_id: str, update_data: Dict[str, Any]):
     partner_doc = await db.delivery_partners.find_one({"user_id": user_id})
     return {"success": True, "partner": serialize_doc(partner_doc)}
 
+@api_router.get("/delivery-partners/user/{user_id}/available-orders")
+async def get_available_orders(user_id: str, lat: Optional[float] = None, lng: Optional[float] = None):
+    """Get available orders for delivery partner (unassigned or assigned to them)"""
+    # Get partner's current location if not provided
+    partner = await db.delivery_partners.find_one({"user_id": user_id})
+    
+    if not lat or not lng:
+        if partner and partner.get("current_location"):
+            lat = partner["current_location"]["lat"]
+            lng = partner["current_location"]["lng"]
+    
+    # Find orders that are accepted by shop but not assigned to any partner
+    query = {
+        "$or": [
+            {"status": "accepted", "delivery_partner_id": None},
+            {"delivery_partner_id": user_id, "status": {"$in": ["assigned", "picked_up", "on_the_way"]}}
+        ]
+    }
+    
+    orders = await db.orders.find(query).sort("created_at", -1).to_list(50)
+    
+    # Enrich with shop details
+    enriched_orders = []
+    for order in orders:
+        shop = await db.shops.find_one({"_id": ObjectId(order["shop_id"])})
+        order["shop_details"] = serialize_doc(shop) if shop else None
+        enriched_orders.append(serialize_doc(order))
+    
+    return {"success": True, "orders": enriched_orders}
+
+@api_router.put("/orders/{order_id}/assign")
+async def assign_order_to_partner(order_id: str, assign_data: Dict[str, str]):
+    """Assign order to delivery partner"""
+    partner_id = assign_data.get("delivery_partner_id")
+    
+    # Check if order exists and is available
+    order = await db.orders.find_one({"_id": ObjectId(order_id)})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order.get("delivery_partner_id"):
+        raise HTTPException(status_code=400, detail="Order already assigned")
+    
+    # Update order
+    status_history = order.get("status_history", [])
+    status_history.append({
+        "status": "assigned",
+        "timestamp": datetime.utcnow()
+    })
+    
+    await db.orders.update_one(
+        {"_id": ObjectId(order_id)},
+        {"$set": {
+            "delivery_partner_id": partner_id,
+            "status": "assigned",
+            "status_history": status_history,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    
+    # Add earning for partner (fixed delivery fee for MVP)
+    delivery_fee = 30.0  # ₹30 per delivery
+    
+    transaction = Transaction(
+        delivery_partner_id=partner_id,
+        order_id=order_id,
+        amount=delivery_fee,
+        type="earning",
+        status="completed"
+    )
+    await db.transactions.insert_one(transaction.dict())
+    
+    # Update partner's total earnings
+    await db.delivery_partners.update_one(
+        {"user_id": partner_id},
+        {"$inc": {"total_earnings": delivery_fee}}
+    )
+    
+    order_doc = await db.orders.find_one({"_id": ObjectId(order_id)})
+    return {"success": True, "order": serialize_doc(order_doc)}
+
+@api_router.put("/delivery-partners/{user_id}/location")
+async def update_partner_location(user_id: str, location_data: Dict[str, float]):
+    """Update delivery partner's current location"""
+    await db.delivery_partners.update_one(
+        {"user_id": user_id},
+        {"$set": {"current_location": location_data}}
+    )
+    return {"success": True, "message": "Location updated"}
+
 @api_router.get("/delivery-partners/{user_id}/earnings")
-async def get_earnings(user_id: str):
+async def get_earnings(user_id: str, period: Optional[str] = "all"):
     """Get delivery partner earnings"""
-    transactions = await db.transactions.find(
-        {"delivery_partner_id": user_id}
-    ).sort("created_at", -1).to_list(100)
+    query = {"delivery_partner_id": user_id, "type": "earning"}
+    
+    # Filter by period
+    if period == "today":
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        query["created_at"] = {"$gte": today_start}
+    elif period == "week":
+        from datetime import timedelta
+        week_start = datetime.utcnow() - timedelta(days=7)
+        query["created_at"] = {"$gte": week_start}
+    
+    transactions = await db.transactions.find(query).sort("created_at", -1).to_list(100)
     
     partner = await db.delivery_partners.find_one({"user_id": user_id})
+    
+    # Calculate stats
+    total_deliveries = len([t for t in transactions if t.get("type") == "earning"])
+    total_earned = sum([t.get("amount", 0) for t in transactions if t.get("type") == "earning"])
     
     return {
         "success": True,
         "total_earnings": partner.get("total_earnings", 0.0) if partner else 0.0,
+        "period_earnings": total_earned,
+        "total_deliveries": total_deliveries,
         "transactions": [serialize_doc(t) for t in transactions]
     }
+
+@api_router.post("/delivery-partners/{user_id}/payout-request")
+async def request_payout(user_id: str, payout_data: Dict[str, float]):
+    """Request payout"""
+    amount = payout_data.get("amount", 0)
+    
+    partner = await db.delivery_partners.find_one({"user_id": user_id})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found")
+    
+    if partner.get("total_earnings", 0) < amount:
+        raise HTTPException(status_code=400, detail="Insufficient balance")
+    
+    # Create payout transaction
+    transaction = Transaction(
+        delivery_partner_id=user_id,
+        order_id=None,
+        amount=amount,
+        type="payout",
+        status="pending"
+    )
+    result = await db.transactions.insert_one(transaction.dict())
+    
+    # Deduct from earnings
+    await db.delivery_partners.update_one(
+        {"user_id": user_id},
+        {"$inc": {"total_earnings": -amount}}
+    )
+    
+    transaction_doc = await db.transactions.find_one({"_id": result.inserted_id})
+    return {"success": True, "transaction": serialize_doc(transaction_doc)}
 
 # ==================== Village & Utility Routes ====================
 

@@ -17,6 +17,7 @@ export default function LoginScreen() {
   const [language, setLanguage] = useState<Language>('en');
   const [name, setName] = useState('');
   const [village, setVillage] = useState('');
+  const [role, setRole] = useState<'customer' | 'delivery_partner'>('customer');
 
   const t = translations[language];
 
