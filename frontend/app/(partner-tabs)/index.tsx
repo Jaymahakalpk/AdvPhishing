@@ -37,13 +37,20 @@ export default function PartnerDashboard() {
         setLocation(loc.coords);
         
         // Update partner location in backend
-        await updatePartnerLocation(user!.id, {
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-        });
+        try {
+          await updatePartnerLocation(user!.id, {
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+          });
+        } catch (error) {
+          console.log('Location update error (non-critical):', error);
+        }
+      } else {
+        console.log('Location permission denied (will work without it)');
       }
     } catch (error) {
-      console.error('Location permission error:', error);
+      console.log('Location permission error (non-critical):', error);
+      // Continue without location - app will still work
     }
   };
 
