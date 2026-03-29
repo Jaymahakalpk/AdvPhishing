@@ -28,7 +28,6 @@ export default function PartnerProfileScreen() {
       setIsAvailable(response.data.partner.is_available);
     } catch (error) {
       console.error('Fetch partner error:', error);
-      // Partner might not exist yet, that's okay
     } finally {
       setLoading(false);
     }
@@ -73,7 +72,7 @@ export default function PartnerProfileScreen() {
           <Text style={styles.headerTitle}>{t.profile}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size=\"large\" color=\"#10b981\" />
+          <ActivityIndicator size="large" color="#10b981" />
         </View>
       </SafeAreaView>
     );
@@ -86,7 +85,6 @@ export default function PartnerProfileScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -97,13 +95,12 @@ export default function PartnerProfileScreen() {
           <Text style={styles.phone}>{user?.phone}</Text>
           {partner?.is_verified && (
             <View style={styles.verifiedBadge}>
-              <Ionicons name=\"checkmark-circle\" size={16} color=\"#10b981\" />
+              <Ionicons name="checkmark-circle" size={16} color="#10b981" />
               <Text style={styles.verifiedText}>Verified Partner</Text>
             </View>
           )}
         </View>
 
-        {/* Availability Toggle */}
         <View style={styles.section}>
           <View style={styles.availabilityCard}>
             <View style={styles.availabilityInfo}>
@@ -127,39 +124,37 @@ export default function PartnerProfileScreen() {
               value={isAvailable}
               onValueChange={toggleAvailability}
               trackColor={{ false: '#d1d5db', true: '#10b981' }}
-              thumbColor=\"#ffffff\"
+              thumbColor="#ffffff"
             />
           </View>
         </View>
 
-        {/* Stats */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Statistics</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Ionicons name=\"bicycle\" size={32} color=\"#10b981\" />
-              <Text style={styles.statValue}>{partner?.total_deliveries || 0}</Text>
+              <Ionicons name="bicycle" size={32} color="#10b981" />
+              <Text style={styles.statValue}>0</Text>
               <Text style={styles.statLabel}>Deliveries</Text>
             </View>
             <View style={styles.statCard}>
-              <Ionicons name=\"wallet\" size={32} color=\"#f59e0b\" />
-              <Text style={styles.statValue}>₹{partner?.total_earnings?.toFixed(0) || 0}</Text>
+              <Ionicons name="wallet" size={32} color="#f59e0b" />
+              <Text style={styles.statValue}>₹0</Text>
               <Text style={styles.statLabel}>Total Earned</Text>
             </View>
             <View style={styles.statCard}>
-              <Ionicons name=\"star\" size={32} color=\"#fbbf24\" />
-              <Text style={styles.statValue}>{partner?.rating?.toFixed(1) || '5.0'}</Text>
+              <Ionicons name="star" size={32} color="#fbbf24" />
+              <Text style={styles.statValue}>5.0</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
           </View>
         </View>
 
-        {/* Account Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Ionicons name=\"call\" size={20} color=\"#6b7280\" />
+              <Ionicons name="call" size={20} color="#6b7280" />
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoLabel}>Phone Number</Text>
                 <Text style={styles.infoValue}>{user?.phone}</Text>
@@ -168,52 +163,17 @@ export default function PartnerProfileScreen() {
           </View>
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Ionicons name=\"location\" size={20} color=\"#6b7280\" />
+              <Ionicons name="location" size={20} color="#6b7280" />
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoLabel}>Village/City</Text>
                 <Text style={styles.infoValue}>{user?.village || 'Not set'}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Ionicons name=\"language\" size={20} color=\"#6b7280\" />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Language</Text>
-                <Text style={styles.infoValue}>
-                  {lang === 'en' ? 'English' : lang === 'hi' ? 'हिंदी' : lang === 'gu' ? 'ગુજરાતી' : 'ଓଡ଼ିଆ'}
-                </Text>
-              </View>
-            </View>
-          </View>
         </View>
 
-        {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Ionicons name=\"bicycle\" size={20} color=\"#10b981\" />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>Gaon Delivery Partner</Text>
-                <Text style={styles.infoSubtitle}>Earn ₹30 per delivery</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Ionicons name=\"information-circle\" size={20} color=\"#10b981\" />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>Version</Text>
-                <Text style={styles.infoSubtitle}>1.0.0</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name=\"log-out-outline\" size={24} color=\"#ef4444\" />
+          <Ionicons name="log-out-outline" size={24} color="#ef4444" />
           <Text style={styles.logoutText}>{t.logout}</Text>
         </TouchableOpacity>
 
@@ -386,16 +346,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  infoSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
