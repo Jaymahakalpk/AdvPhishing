@@ -24,7 +24,12 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated && user?.name) {
-      router.replace('/(tabs)');
+      // Route based on user role
+      if (user?.role === 'delivery_partner') {
+        router.replace('/(partner-tabs)');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   }, [isAuthenticated, user]);
 
