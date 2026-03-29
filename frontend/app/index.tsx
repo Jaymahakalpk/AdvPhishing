@@ -99,15 +99,28 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      // Update only name, village, and language - keep existing role
       await updateUser(user!.id, {
         name,
         village,
         language_preference: language,
       });
       
-      const updatedUser = { ...user!, name, village, language_preference: language };
+      // Keep the user's existing role from backend
+      const updatedUser = { 
+        ...user!, 
+        name, 
+        village, 
+        language_preference: language 
+      };
       await setUser(updatedUser);
-      router.replace('/(tabs)');
+      
+      // Route based on user's role
+      if (user!.role === 'delivery_partner') {
+        router.replace('/(partner-tabs)');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Update profile error:', error);
       Alert.alert('Error', 'Failed to update profile');
