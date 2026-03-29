@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [village, setVillage] = useState('');
   const [role, setRole] = useState<'customer' | 'delivery_partner'>('customer');
+  const [generatedOTP, setGeneratedOTP] = useState('');
 
   const t = translations[language];
 
@@ -37,7 +38,9 @@ export default function LoginScreen() {
     try {
       const response = await sendOTP(phone);
       console.log('OTP Response:', response.data);
-      Alert.alert('OTP Sent', `Your OTP is: ${response.data.otp}`);
+      const otpCode = response.data.otp;
+      setGeneratedOTP(otpCode);
+      Alert.alert('OTP Sent Successfully!', `Your OTP is: ${otpCode}\n\nPlease enter this code in the next screen.`);
       setStep('otp');
     } catch (error) {
       console.error('Send OTP error:', error);
@@ -164,6 +167,12 @@ export default function LoginScreen() {
           {step === 'otp' && (
             <View style={styles.formContainer}>
               <Text style={styles.label}>{t.enterOTP}</Text>
+              {generatedOTP && (
+                <View style={styles.otpDisplay}>
+                  <Text style={styles.otpDisplayLabel}>Your OTP Code:</Text>
+                  <Text style={styles.otpDisplayCode}>{generatedOTP}</Text>
+                </View>
+              )}
               <TextInput
                 style={[styles.input, styles.otpInput]}
                 placeholder="1234"
@@ -331,6 +340,27 @@ const styles = StyleSheet.create({
     fontSize: 32,
     letterSpacing: 12,
     fontWeight: 'bold',
+  },
+  otpDisplay: {
+    backgroundColor: '#d1fae5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#10b981',
+    alignItems: 'center',
+  },
+  otpDisplayLabel: {
+    fontSize: 14,
+    color: '#059669',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  otpDisplayCode: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#10b981',
+    letterSpacing: 8,
   },
   button: {
     backgroundColor: '#10b981',
