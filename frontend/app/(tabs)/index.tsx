@@ -18,7 +18,7 @@ export default function HomeScreen() {
 
   const [shops, setShops] = useState<any[]>([]);
   const [villages, setVillages] = useState<string[]>([]);
-  const [selectedVillage, setSelectedVillage] = useState<string>(user?.village || '');
+  const [selectedVillage, setSelectedVillage] = useState<string>('Surat'); // Default to Surat
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] = useState<any>(null);
@@ -37,13 +37,13 @@ export default function HomeScreen() {
   useEffect(() => {
     requestLocationPermission();
     fetchVillages();
+    // Fetch all shops initially
     fetchShops();
   }, []);
 
   useEffect(() => {
-    if (selectedVillage || location) {
-      fetchShops();
-    }
+    // Re-fetch when village or category changes
+    fetchShops();
   }, [selectedVillage, selectedCategory]);
 
   const requestLocationPermission = async () => {
