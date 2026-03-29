@@ -1,22 +1,41 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Gaon Delivery",
+    "slug": "gaon-delivery",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "gaondelivery",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gaondelivery.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Find nearby shops and track delivery",
+        "NSCameraUsageDescription": "Take photos for orders",
+        "NSMicrophoneUsageDescription": "Use voice search to find products",
+        "NSPhotoLibraryUsageDescription": "Select photos for shop listing"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.gaondelivery.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -26,12 +45,22 @@
     "plugins": [
       "expo-router",
       [
-        "expo-splash-screen",
+        "expo-location",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "locationAlwaysAndWhenInUsePermission": "Allow Gaon Delivery to use your location to find nearby shops and track deliveries."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Gaon Delivery to access your camera to take photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#ffffff"
         }
       ]
     ],
